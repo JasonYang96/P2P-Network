@@ -644,7 +644,7 @@ static void task_upload(task_t *t)
 	}
 
 	assert(t->head == 0);
-	if (osp2p_snscanf(t->buf, t->tail, "GET %s OSP2P\n", t->filename) < 0) {
+	if (osp2p_snscanf(t->buf, t->tail > FILENAMESIZ ? FILENAMESIZ : t->tail, "GET %s OSP2P\n", t->filename) < 0) {
 		error("* Odd request %.*s\n", t->tail, t->buf);
 		goto exit;
 	}
