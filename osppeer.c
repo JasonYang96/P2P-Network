@@ -22,6 +22,7 @@
 #include <limits.h>
 #include "md5.h"
 #include "osp2p.h"
+#include <sys/wait.h>
 
 int evil_mode;			// nonzero iff this peer should behave badly
 
@@ -690,6 +691,7 @@ int main(int argc, char *argv[])
 	char *s;
 	const char *myalias;
 	struct passwd *pwent;
+	pid_t pid, child;
 
 	// Default tracker is read.cs.ucla.edu
 	osp2p_sscanf("131.179.80.139:11111", "%I:%d",
@@ -758,11 +760,26 @@ int main(int argc, char *argv[])
 	listen_task = start_listen();
 	register_files(tracker_task, myalias);
 
-	// First, download files named on command line.
-	for (; argc > 1; argc--, argv++)
-		if ((t = start_download(tracker_task, argv[1])))
-			task_download(t, tracker_task);
-
+	pid = fork();
+	if (pid = 0)
+	{
+		// First, download files named on command line.
+		for (; argc > 1; argc--, argv++)
+		{
+			if ((t = start_download(tracker_task, argv[1])))
+			{
+				child = fork();
+				if (child = 0)
+				{
+					task_download(t, tracker_task);
+					exit(0);
+				}
+			}
+		}
+		while(wait(NULL) > 0))
+			;
+		exit(0);
+	}
 	// Then accept connections from other peers and upload files to them!
 	while ((t = task_listen(listen_task)))
 		task_upload(t);
