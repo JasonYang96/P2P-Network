@@ -650,6 +650,12 @@ static void task_upload(task_t *t)
 	}
 	t->head = t->tail = 0;
 
+	//check devious attacks
+	if (t->filename[0] == '/' || strstr(t->filename, "../")){
+		error("Tried to go out of current directory: %s\n", t->filename);
+		goto exit;
+	}
+
 	t->disk_fd = open(t->filename, O_RDONLY);
 	if (t->disk_fd == -1) {
 		error("* Cannot open file %s", t->filename);
@@ -761,7 +767,7 @@ int main(int argc, char *argv[])
 	register_files(tracker_task, myalias);
 
 	pid = fork();
-	if (pid = 0)
+	if (pid == 0)
 	{
 		// First, download files named on command line.
 		for (; argc > 1; argc--, argv++)
@@ -769,17 +775,23 @@ int main(int argc, char *argv[])
 			if ((t = start_download(tracker_task, argv[1])))
 			{
 				child = fork();
-				if (child = 0)
+				if (child == 0)
 				{
 					task_download(t, tracker_task);
 					exit(0);
 				}
 			}
 		}
-		while(wait(NULL) > 0))
+		while(wait(NULL) > 0)
 			;
 		exit(0);
 	}
+
+	// // First, download files named on command line.
+	// 	for (; argc > 1; argc--, argv++)
+	// 		if ((t = start_download(tracker_task, argv[1])))
+	// 			task_download(t, tracker_task);
+
 	// Then accept connections from other peers and upload files to them!
 	while ((t = task_listen(listen_task)))
 		task_upload(t);
