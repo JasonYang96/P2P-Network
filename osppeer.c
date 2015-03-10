@@ -24,7 +24,7 @@
 #include "osp2p.h"
 #include <sys/wait.h>
 
-int evil_mode;			// nonzero iff this peer should behave badly
+int evil_mode;			// nonzero if this peer should behave badly
 
 static struct in_addr listen_addr;	// Define listening endpoint
 static int listen_port;
@@ -36,8 +36,9 @@ static int listen_port;
  * a bounded buffer that simplifies reading from and writing to peers.
  */
 
-#define TASKBUFSIZ	4096	// Size of task_t::buf
+#define TASKBUFSIZ	32768	// Size of task_t::buf
 #define FILENAMESIZ	256	// Size of task_t::filename
+#define MAXFILESIZE	67108864 //Size of max file size
 
 typedef enum tasktype {		// Which type of connection is this?
 	TASK_TRACKER,		// => Tracker connection
@@ -555,8 +556,16 @@ static void task_download(task_t *t, task_t *tracker_task)
 	}
 
 	// Read the file into the task buffer from the peer,
-	// and write it from the task buffer onto disk.
+	// and write it from the task bufer onto disk.
 	while (1) {
+		//check file size
+		if (t->total_written > MAXFILESIZE)
+		{
+			unlink(t->disk_filename);
+			message("File size too large\n");
+			task_free(t);
+			return;
+		}
 		int ret = read_to_taskbuf(t->peer_fd, t);
 		if (ret == TBUF_ERROR) {
 			error("* Peer read error");
@@ -786,11 +795,6 @@ int main(int argc, char *argv[])
 			;
 		exit(0);
 	}
-
-	// // First, download files named on command line.
-	// 	for (; argc > 1; argc--, argv++)
-	// 		if ((t = start_download(tracker_task, argv[1])))
-	// 			task_download(t, tracker_task);
 
 	// Then accept connections from other peers and upload files to them!
 	while ((t = task_listen(listen_task)))
