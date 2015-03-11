@@ -38,6 +38,7 @@ Third, we made sure that the file size would not go over a defined constant so t
 
 # EXERCISE 3: Describe the attacks you implemented for "evil mode".  Why
 #    are they attacks?  (~3-10 sentences each)
+We implemented one uploader attack as well as one downloader attack. For the uploader attack, when a peer wanted to download a file from us, we would instead tranfer the /dev/zero file instead. For the downloader attack, when we try to process a download, we instead send it a GET request of file with a name of size FILENAMESIZ + 50, to try to buffer overflow the buffer.
 
 # Extra credit problems
 #Extra credit problem: none
